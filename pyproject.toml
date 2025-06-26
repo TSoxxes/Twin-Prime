@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "prime-vector-space"
+version = "0.1.0"
+description = "A Geometric-Computational Architecture for Resolving the Twin Prime Conjecture"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.23"
+scipy = "^1.9"
+click = "^8.1"
+pandas = "^1.5" # For Parquet IO
+pyarrow = "^10.0" # For Parquet IO
+# For visualization, optional
+matplotlib = { version = "^3.6", optional = true }
+
+[tool.poetry.extras]
+viz = ["matplotlib"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-cov = "^4.1"
+black = "^23.0"
+isort = "^5.12"
+ruff = "^0.1"
+pre-commit = "^3.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I", "UP", "PL", "TID"]
+ignore = ["E501"] # Let black handle line length formatting
+
+[tool.pytest.ini_options]
+# Add pytest options here if needed
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+# Example: Register custom markers
+# markers = [
+#     "slow: marks tests as slow to run",
+# ]

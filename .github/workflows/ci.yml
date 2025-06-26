@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+        # Can add specific poetry versions if needed, but usually latest is fine
+        # poetry-version: ['1.8.0']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      # with:
+      #   version: ${{ matrix.poetry-version }} # if specific version needed
+      #   virtualenvs-create: true # Recommended
+      #   virtualenvs-in-project: true # Optional: creates .venv in project root
+
+    - name: Configure Poetry
+      run: poetry config virtualenvs.in-project true # Creates .venv in project root
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --no-root --with dev --extras viz
+        # --no-root: Do not install the project itself as editable, just its dependencies.
+        # --with dev: Install development dependencies (pytest, black, etc.)
+        # --extras viz: Install optional dependencies for visualization
+
+    - name: Lint with Ruff
+      run: |
+        poetry run ruff check .
+        # poetry run ruff format --check . # If using ruff for formatting check
+
+    - name: Format with Black (check only)
+      run: |
+        poetry run black --check .
+
+    - name: Sort imports with isort (check only)
+      run: |
+        poetry run isort --check-only .
+
+    - name: Run tests with Pytest and generate coverage report
+      run: |
+        poetry run pytest --cov=pvs --cov-report=xml --cov-report=term-missing tests/
+        # --cov-report=xml: for Codecov or other coverage services
+        # --cov-report=term-missing: for console output of coverage
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4 # Use latest version
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }} # Optional: if private repo or for specific features
+        # files: ./coverage.xml # Optional: specify coverage file if not default
+        # fail_ci_if_error: true # Optional: fail CI if Codecov upload fails
+      # Note: For public repos, Codecov token is often not required.
+      # For private, store CODECOV_TOKEN in GitHub secrets.
+
+  # Optional: Job to check if documentation builds (if using Sphinx, MkDocs, etc.)
+  # build-docs:
+  #   name: Build Documentation
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout repository
+  #     uses: actions/checkout@v4
+  #   - name: Set up Python
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: '3.11' # Or the version your docs tools use
+  #   - name: Install Poetry
+  #     uses: snok/install-poetry@v1
+  #   - name: Install dependencies (including docs tools)
+  #     run: poetry install --with docs # Assuming a 'docs' dependency group in pyproject.toml
+  #   - name: Build documentation
+  #     run: poetry run sphinx-build docs docs/_build/html # Example for Sphinx
+
+# Optional: Job for pre-commit checks (can be redundant if linters are run separately,
+# but good for ensuring pre-commit config itself is valid)
+#  lint-precommit:
+#    name: Pre-commit Linters
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.11'
+#      - name: Install pre-commit
+#        run: pip install pre-commit
+#      - name: Run pre-commit hooks
+#        run: pre-commit run --all-files --show-diff-on-failure
+
+# Ensure that if you use a CODECOV_TOKEN, it's set in your repository's secrets.
+# Settings > Secrets and variables > Actions > New repository secret.
+# Name: CODECOV_TOKEN, Value: <your_codecov_upload_token>
+# This is typically needed for private repositories. Public repos might work without it.

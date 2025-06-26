@@ -1,0 +1,63 @@
+# Conda environment file.
+# This is a mirror of the dependencies specified in pyproject.toml for users who prefer Conda.
+# It should be manually kept in sync with pyproject.toml or generated from it if tools allow.
+
+name: prime-vector-space
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Core Python version
+  - python>=3.11
+
+  # Core library dependencies (from pyproject.toml [tool.poetry.dependencies])
+  - numpy>=1.23
+  - scipy>=1.9
+  - click>=8.1
+  - pandas>=1.5 # For Parquet IO
+  - pyarrow>=10.0 # For Parquet IO
+
+  # Optional dependencies (from pyproject.toml [tool.poetry.extras])
+  # For 'viz' extra:
+  - matplotlib>=3.6 # Marked as optional, include if commonly used or for full feature parity
+
+  # Development dependencies (from pyproject.toml [tool.poetry.group.dev.dependencies])
+  # These are typically not needed in a deployed Conda environment for the library itself,
+  # but are listed here for completeness if someone wants to set up a dev env with Conda.
+  # Consider if these should be in a separate dev environment.yml file.
+  - pytest>=7.4
+  - pytest-cov>=4.1
+  - black>=23.0
+  - isort>=5.12
+  - ruff>=0.1
+  - pre-commit>=3.5
+  - poetry>=1.8 # For managing the project, if developing
+
+  # Pip dependencies (if any packages are not available on Conda channels)
+  # - pip:
+  #   - some-pip-only-package
+
+# To create this environment:
+# conda env create -f environment.yml
+
+# To activate this environment:
+# conda activate prime-vector-space
+
+# To update this environment if the file changes:
+# conda env update -f environment.yml --prune
+
+# Note: Poetry is the primary tool for managing dependencies for this project.
+# This file is provided as a convenience for Conda users.
+# Ensure versions here match pyproject.toml.
+# Last synced with pyproject.toml: <Date of last sync>
+# Manual sync is required if pyproject.toml changes.
+#
+# Example of specifying versions:
+# - numpy=1.23.5
+# - scipy=1.9.3
+# etc.
+# Using >= is often fine for libraries but can lead to resolver issues.
+# Exact versions (from poetry.lock) would be more reproducible but harder to maintain here.
+# The current approach mirrors the flexibility of pyproject.toml's version specifiers.
