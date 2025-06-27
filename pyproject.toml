@@ -5,6 +5,7 @@ description = "A Geometric-Computational Architecture for Resolving the Twin Pri
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [{ include = "pvs" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -15,6 +16,9 @@ pandas = "^1.5" # For Parquet IO
 pyarrow = "^10.0" # For Parquet IO
 # For visualization, optional
 matplotlib = { version = "^3.6", optional = true }
+
+[tool.poetry.scripts]
+pvs = "pvs.cli:cli"
 
 [tool.poetry.extras]
 viz = ["matplotlib"]
