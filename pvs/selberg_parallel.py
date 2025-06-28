@@ -1,12 +1,4 @@
-"""
-pvs_selberg.py  –  Compute squared Selberg weights W(n;x) in parallel
-=====================================================================
-
-Author :  <your name>      Date :  2025-06-28
-Licence:  MIT
-
-Run `python pvs_selberg.py -h`  for CLI options.
-"""
+# pvs/selberg_parallel.py
 
 from __future__ import annotations
 import argparse, math, sys, time, logging, os
@@ -14,9 +6,12 @@ from typing import List, Tuple
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
-import pandas as pd            # Parquet writer
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 try:
-    from tqdm import tqdm      # optional nice progress bar
+    from tqdm import tqdm
     TQDM = True
 except ImportError:
     TQDM = False
@@ -123,30 +118,41 @@ def main():
     # -- Pre-compute μ up to R
     logging.info(f"Building SPF & Möbius arrays up to R …")
     t0 = time.time()
-    spf, mu = build_spf_and_mobius(R)
+    _, mu = build_spf_and_mobius(R)
     logging.info(f"  done in {time.time()-t0:.2f} s")
 
     # -- Prepare blocks
     starts = list(range(2, x + 1, args.chunksize))
     blocks = [(s, min(s + args.chunksize, x + 1), R, mu) for s in starts]
-    total_n = x - 1
 
     # -- Multiprocessing
     logging.info(f"Launching pool with {args.workers} worker(s)…")
-    with Pool(processes=args.workers) as pool, \
-         pd.ExcelWriter(args.outfile, engine='pyarrow', mode='wb') as writer:  # ensure Parquet engine available
-        iterator = pool.imap_unordered(_process_block, blocks)
-        if TQDM: iterator = tqdm(iterator, total=len(blocks), desc="Blocks")
-        for start_idx, arr in iterator:
-            # write each block as a Parquet fragment
-            df = pd.DataFrame({
-                "n": np.arange(start_idx, start_idx + len(arr), dtype=np.uint64),
-                "W": arr
-            })
-            # append to Parquet file (row-group per block)
-            df.to_parquet(writer, index=False, compression="zstd")
+    
+    # Correctly use pyarrow.parquet.ParquetWriter
+    writer = None
+    try:
+        with Pool(processes=args.workers) as pool:
+            iterator = pool.imap_unordered(_process_block, blocks)
+            if TQDM:
+                iterator = tqdm(iterator, total=len(blocks), desc="Blocks")
+            
+            for i, (start_idx, arr) in enumerate(iterator):
+                df = pd.DataFrame({
+                    "n": np.arange(start_idx, start_idx + len(arr), dtype=np.uint64),
+                    "W": arr
+                })
+                table = pa.Table.from_pandas(df, preserve_index=False)
+                
+                # For the first chunk, create the writer and schema
+                if writer is None:
+                    writer = pq.ParquetWriter(args.outfile, table.schema, compression="zstd")
+                
+                writer.write_table(table)
+    finally:
+        if writer:
+            writer.close()
+
     logging.info(f"All done – results in  {args.outfile}")
 
-# ----------------------------------------------------------------------
 if __name__ == "__main__":
     main()
