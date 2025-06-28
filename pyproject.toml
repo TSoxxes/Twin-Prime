@@ -16,6 +16,9 @@ pandas = "^1.5" # For Parquet IO
 pyarrow = "^10.0" # For Parquet IO
 # For visualization, optional
 matplotlib = { version = "^3.6", optional = true }
+scikit-learn = "^1.7.0"
+tqdm = "^4.67.1"
+seaborn = "^0.13.2"
 
 [tool.poetry.scripts]
 pvs = "pvs.cli:cli"
@@ -30,6 +33,7 @@ black = "^23.0"
 isort = "^5.12"
 ruff = "^0.1"
 pre-commit = "^3.5"
+pytest-mock = "^3.14.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -51,7 +55,6 @@ ignore = ["E501"] # Let black handle line length formatting
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-# Example: Register custom markers
-# markers = [
-#     "slow: marks tests as slow to run",
-# ]
+markers = [
+    "slow: marks tests as slow to run",
+]
